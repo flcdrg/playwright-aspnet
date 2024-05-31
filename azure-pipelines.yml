@@ -15,3 +15,36 @@ variables:
 steps:
 - script: dotnet build
   displayName: 'dotnet build'
+
+- task: NodeTool@0
+  inputs:
+    versionSpec: '20'
+  displayName: 'Install Node.js'
+- script: npm ci
+  displayName: 'npm ci'
+  workingDirectory: tests
+- script: npx playwright install --with-deps
+  displayName: 'Install Playwright browsers'
+  workingDirectory: tests
+- script: npx playwright test
+  displayName: 'Run Playwright tests'
+  workingDirectory: tests
+  env:
+    CI: 'true'
+
+- task: PublishTestResults@2
+  displayName: 'Publish test results'
+  inputs:
+    searchFolder: 'tests/test-results'
+    testResultsFormat: 'JUnit'
+    testResultsFiles: 'e2e-junit-results.xml'
+    mergeTestResults: true
+    failTaskOnFailedTests: true
+    testRunTitle: 'My End-To-End Tests'
+  condition: succeededOrFailed()
+- task: PublishPipelineArtifact@1
+  inputs:
+    targetPath: tests/playwright-report
+    artifact: playwright-report
+    publishLocation: 'pipeline'
+  condition: succeededOrFailed()    
